@@ -14,27 +14,37 @@ const QuerySchema = Type.Object({
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Fastify plugin
+
+function deferItPlugin(app, opts, done) {
+  app.get(
+    "/",
+    {
+      schema: {
+        querystring: QuerySchema,
+      },
+    },
+    async (request, reply) => {
+      const { url, waitFor } = request.query;
+
+      await sleep(waitFor);
+
+      reply.redirect(url);
+    }
+  );
+
+  done();
+}
+
 // Fastify app
 
 const app = Fastify({
   logger: true,
 }).setValidatorCompiler(TypeBoxValidatorCompiler);
 
-app.get(
-  "/",
-  {
-    schema: {
-      querystring: QuerySchema,
-    },
-  },
-  async (request, reply) => {
-    const { url, waitFor } = request.query;
-
-    await sleep(waitFor);
-
-    reply.redirect(url);
-  }
-);
+app.register(deferItPlugin, {
+  prefix: "/api/v1",
+});
 
 // Serverless handler
 
