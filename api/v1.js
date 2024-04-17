@@ -9,7 +9,7 @@ FormatRegistry.Set("url", isURL);
 
 const QuerySchema = Type.Object({
   url: Type.String({ format: "url" }),
-  waitFor: Type.Optional(Type.Integer({ default: 1000 })),
+  waitFor: Type.Optional(Type.Integer({ default: 1000, maximum: 5000 })),
 });
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
