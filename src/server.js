@@ -44,6 +44,7 @@ function getFastifyApp() {
     logger: true,
   }).setValidatorCompiler(TypeBoxValidatorCompiler);
 
+  // useful for test cases, to check response time
   app.addHook("onSend", async (_, reply, payload) => {
     reply.header("x-response-time", reply.elapsedTime);
     return payload;
