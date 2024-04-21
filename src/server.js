@@ -44,10 +44,6 @@ function getFastifyApp() {
     logger: true,
   }).setValidatorCompiler(TypeBoxValidatorCompiler);
 
-  // app.addHook("onResponse", async (_, reply) => {
-  //   reply.elapsedTime;
-  // }); // this has to be called in this hook - to enable all the other getResponseTime calls
-
   app.addHook("onSend", async (_, reply, payload) => {
     reply.header("x-response-time", reply.elapsedTime);
     return payload;
