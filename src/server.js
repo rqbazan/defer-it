@@ -1,5 +1,6 @@
 const Fastify = require("fastify");
 const { FormatRegistry, Type } = require("@sinclair/typebox");
+const { Value } = require("@sinclair/typebox/value");
 const { TypeBoxValidatorCompiler } = require("@fastify/type-provider-typebox");
 const isURL = require("is-url");
 
@@ -25,7 +26,7 @@ function deferItV1Plugin(app, opts, done) {
       },
     },
     async (request, reply) => {
-      const { url, waitFor } = request.query;
+      const { url, waitFor } = Value.Default(QuerySchema, request.query);
 
       await sleep(waitFor);
 
@@ -42,6 +43,15 @@ function getFastifyApp() {
   const app = Fastify({
     logger: true,
   }).setValidatorCompiler(TypeBoxValidatorCompiler);
+
+  // app.addHook("onResponse", async (_, reply) => {
+  //   reply.elapsedTime;
+  // }); // this has to be called in this hook - to enable all the other getResponseTime calls
+
+  app.addHook("onSend", async (_, reply, payload) => {
+    reply.header("x-response-time", reply.elapsedTime);
+    return payload;
+  });
 
   app.register(deferItV1Plugin, {
     prefix: "/api/v1",

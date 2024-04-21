@@ -1,7 +1,7 @@
 const tap = require("tap");
 const { getFastifyApp } = require("../src/server");
 
-tap.test("should redirect when url param is valid", async (t) => {
+tap.test("should redirect after 1000ms when url param is valid", async (t) => {
   const app = getFastifyApp();
 
   t.teardown(() => app.close());
@@ -12,11 +12,44 @@ tap.test("should redirect when url param is valid", async (t) => {
       url: "/api/v1?url=https://example.com",
     });
 
+    const responseTime = Number(res.headers["x-response-time"]);
+
     t.equal(res.statusCode, 302);
+    t.equal(res.headers.location, "https://example.com");
+    t.ok(responseTime > 1000, "response time should be more than 1000ms");
   } catch (err) {
     t.error(err);
   }
 });
+
+tap.test(
+  "should redirect after custom time when url param is valid",
+  async (t) => {
+    const app = getFastifyApp();
+
+    t.teardown(() => app.close());
+
+    const waitFor = 1500;
+
+    try {
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/v1?waitFor=${waitFor}&url=https://example.com`,
+      });
+
+      const responseTime = Number(res.headers["x-response-time"]);
+
+      t.equal(res.statusCode, 302);
+      t.equal(res.headers.location, "https://example.com");
+      t.ok(
+        responseTime > waitFor,
+        `response time should be more than ${waitFor}ms`
+      );
+    } catch (err) {
+      t.error(err);
+    }
+  }
+);
 
 tap.test("should return 400 when url param is not present", async (t) => {
   const app = getFastifyApp();
