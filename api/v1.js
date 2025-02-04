@@ -1,6 +1,12 @@
+const { createApiKeyStore } = require("../src/api-key/store");
 const { getFastifyApp } = require("../src/server");
 
-const app = getFastifyApp();
+const encodedKeys = process.env.API_KEYS ?? "";
+const apiKeyStore = createApiKeyStore(encodedKeys);
+
+const app = getFastifyApp({
+  apiKeyStore,
+});
 
 async function handler(req, reply) {
   await app.ready();

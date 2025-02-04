@@ -2,7 +2,9 @@ const Fastify = require("fastify");
 const { FormatRegistry, Type } = require("@sinclair/typebox");
 const { Value } = require("@sinclair/typebox/value");
 const { TypeBoxValidatorCompiler } = require("@fastify/type-provider-typebox");
+const fp = require("fastify-plugin");
 const isURL = require("is-url");
+const { ApiKeyService } = require("./api-key/service");
 
 // Utils
 
@@ -15,31 +17,49 @@ const QuerySchema = Type.Object({
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Fastify plugin
+// Fastify plugins
 
 function deferItV1Plugin(app, opts, done) {
-  app.get(
-    "/",
-    {
-      schema: {
-        querystring: QuerySchema,
-      },
+  app.route({
+    method: "GET",
+    url: "/",
+    schema: {
+      querystring: QuerySchema,
     },
-    async (request, reply) => {
+    preHandler: async (request, reply) => {
+      const apiKey = request.query.apiKey;
+      const isValid = await app.apiKeyService.verifyApiKey(apiKey);
+
+      if (!isValid) {
+        reply.code(401).send({ message: "Unauthorized API Key" });
+      }
+    },
+    handler: async (request, reply) => {
       const { url, waitFor } = Value.Default(QuerySchema, request.query);
 
       await sleep(waitFor);
 
       reply.redirect(url);
-    }
-  );
+    },
+  });
 
   done();
 }
 
+const apiKeysPlugin = fp(function apiKeysPlugin(app, opts, done) {
+  if (!app.apiKeyService) {
+    const apiKeyService = new ApiKeyService(opts.apiKeyStore);
+    app.decorate("apiKeyService", apiKeyService);
+  }
+
+  done();
+});
+
 // Fastify app
 
-function getFastifyApp() {
+function getFastifyApp(options) {
+  const { apiKeyStore } = options;
+
   const app = Fastify({
     logger: true,
   }).setValidatorCompiler(TypeBoxValidatorCompiler);
@@ -48,6 +68,10 @@ function getFastifyApp() {
   app.addHook("onSend", async (_, reply, payload) => {
     reply.header("x-response-time", reply.elapsedTime);
     return payload;
+  });
+
+  app.register(apiKeysPlugin, {
+    apiKeyStore,
   });
 
   app.register(deferItV1Plugin, {
