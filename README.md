@@ -9,10 +9,11 @@ This is a simple serverless function that defers a request for a given amount of
 
 ##### Query Parameters
 
-> | name      | type     | data type | default | maximum |
-> | --------- | -------- | --------- | ------- | ------- |
-> | `waitFor` | optional | Integer   | `1000`  | `5000`  |
-> | `url`     | required | URL       | N/A     | N/A     |
+> | name      | description                  | required? | data type | default | maximum |
+> | --------- | ---------------------------- | --------- | --------- | ------- | ------- |
+> | `apiKey`  | Contact me                   | yes       | String    | N/A     | N/A     |
+> | `url`     | URL to redirect              | yes       | URL       | N/A     | N/A     |
+> | `waitFor` | Time to wait before redirect | no        | Integer   | `1000`  | `5000`  |
 
 ##### Example URL
 
