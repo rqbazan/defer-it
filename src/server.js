@@ -61,7 +61,29 @@ function getFastifyApp(options) {
   const { apiKeyStore } = options;
 
   const app = Fastify({
-    logger: true,
+    logger: {
+      serializers: {
+        req: (request) => {
+          const url = new URL(request.url, `http://localhost`);
+
+          const sensitiveParams = ["apiKey"];
+
+          sensitiveParams.forEach((param) => {
+            if (url.searchParams.has(param)) {
+              url.searchParams.set(param, "[REDACTED]");
+            }
+          });
+
+          return {
+            method: request.method,
+            url: `${url.pathname}${url.search}`,
+            hostname: request.hostname,
+            remoteAddress: request.ip,
+            remotePort: request.socket.remotePort,
+          };
+        },
+      },
+    },
   }).setValidatorCompiler(TypeBoxValidatorCompiler);
 
   // useful for test cases, to check response time
